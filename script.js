@@ -1,56 +1,78 @@
-let [milliseconds, seconds, minutes, hours] = [0, 0, 0, 0];
-let timeRef = document.querySelector(".timer-display");
-let int = null;
-let lapCount = 1;
-let lapList = document.getElementById("lap-list");
+let cells = document.querySelectorAll(".cell");
+const statusText = document.getElementsByClassName("statusText")[0];
+const restartBtn = document.getElementsByClassName("restartBtn")[0];
 
-document.getElementById("start-timer").addEventListener("click", () => {
-  if (int !== null) {
-    clearInterval(int);
-  }
-  int = setInterval(displayTimer, 10);
-});
+let currentPlayer = "x";
+let gameIsOver = false;
+let winningConditions = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+];
 
-document.getElementById("pause-timer").addEventListener("click", () => {
-  clearInterval(int);
-});
+const updateStatusText = () => {
+  statusText.innerHTML = `Player ${currentPlayer}'s turn`;
+};
 
-document.getElementById("reset-timer").addEventListener("click", () => {
-  clearInterval(int);
-  [milliseconds, seconds, minutes, hours] = [0, 0, 0, 0];
-  timeRef.innerHTML = "00 : 00 : 00 : 000 ";
-});
-document.getElementById("lap-timer").addEventListener("click", () => {
-  let lapTime = timeRef.innerHTML;
-  let lapItem = document.createElement("li");
-  lapItem.innerText = `Lap ${lapCount}: ${lapTime}`;
-  lapList.appendChild(lapItem);
-  lapCount++;
-});
-function displayTimer() {
-  milliseconds += 10;
-  if (milliseconds == 1000) {
-    milliseconds = 0;
-    seconds++;
-    if (seconds == 60) {
-      seconds = 0;
-      minutes++;
-      if (minutes == 60) {
-        minutes = 0;
-        hours++;
-      }
+const checkForWinner = () => {
+  winningConditions.forEach((combination) => {
+    let check = combination.every(
+      (index) => cells[index].innerHTML.trim() === currentPlayer
+    );
+    if (check) {
+      statusText.innerHTML = `${currentPlayer} won`;
+      gameIsOver = true;
+
+      combination.forEach((index) => {
+        cells[index].classList.add("winning-cell");
+        cells[index].style.color = "blue";
+      });
     }
+  });
+};
+
+const checkForDraw = () => {
+  if (![...cells].some((cell) => cell.innerHTML.trim() === "") && !gameIsOver) {
+    statusText.innerHTML = "It's a draw!";
+    gameIsOver = true;
   }
+};
 
-  let h = hours < 10 ? "0" + hours : hours;
-  let m = minutes < 10 ? "0" + minutes : minutes;
-  let s = seconds < 10 ? "0" + seconds : seconds;
-  let ms =
-    milliseconds < 10
-      ? "00" + milliseconds
-      : milliseconds < 100
-      ? "0" + milliseconds
-      : milliseconds;
+updateStatusText();
 
-  timeRef.innerHTML = `${h} : ${m} : ${s} : ${ms}`;
-}
+cells = Array.from(cells);
+cells.forEach((cell) => {
+  cell.addEventListener("click", () => {
+    if (gameIsOver || cell.innerHTML.trim() !== "") return;
+    cell.innerHTML = currentPlayer;
+    checkForWinner();
+    checkForDraw();
+
+    if (!gameIsOver) {
+      currentPlayer = currentPlayer === "x" ? "o" : "x";
+      updateStatusText();
+    }
+  });
+});
+
+restartBtn.addEventListener("click", () => {
+  restartGame();
+});
+
+const restartGame = () => {
+  cells.forEach((cell) => {
+    cell.innerHTML = "";
+    cell.classList.remove("winning-cell");
+    cell.style.color = ""; 
+  });
+
+  currentPlayer = "x";
+  gameIsOver = false;
+
+  updateStatusText();
+};
